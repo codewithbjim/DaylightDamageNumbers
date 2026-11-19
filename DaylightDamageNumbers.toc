@@ -1,0 +1,9 @@
+## Interface: 16001
+## Title: Damage Numbers (DaylightUI Plugin)
+## Notes: The damage you deal to your target, in Daylight UI's combat text streams.
+## Author: virtualbjörn
+## Version: @project-version@
+## IconTexture: Interface\AddOns\DaylightDamageNumbers\icon.png
+## Dependencies: DaylightUI
+
+DamageNumbers.lua
