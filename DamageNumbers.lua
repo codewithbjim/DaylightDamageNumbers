@@ -1,8 +1,8 @@
 -- Damage Numbers (DaylightUI Plugin)
 -- Shows the damage you deal to your target in Daylight UI's combat text
--- (the Right stream by default, next to your heals). Its messages sit on the
--- Combat text page's Messages tab, each with a stream, a color and a switch,
--- like Daylight UI's own.
+-- (the Right stream by default, next to your heals). Its settings have their
+-- own page under Plugins in /dui: each message with a stream, a color and a
+-- switch, like Daylight UI's own.
 --
 -- WoW: Forever keeps the combat log closed, so outgoing hits are read from
 -- UNIT_COMBAT on the target. That event reports every hit the target takes,
@@ -40,7 +40,7 @@ local KIND_ORDER = { "melee", "spell", "crit", "miss" }
 local KINDS = {
     melee = { label = "Your melee and ranged hits", desc = "Your weapon hits on your target, and your pet's." },
     spell = { label = "Your spell hits",
-        desc = "Your spell hits on your target, and your pet's. Colored by school when Color spell hits by school is on (Look tab)." },
+        desc = "Your spell hits on your target, and your pet's. Colored by school when Color spell hits by school is on (Combat text > Look)." },
     crit = { label = "Your crits in their own color", fixed = true,
         desc = "Crits take this color. When off, a crit keeps its hit's color. Either way it lands bigger, in the stream's crit style." },
     miss = { label = "Your misses", desc = "A word when your attack is dodged, parried, missed, resisted or absorbed." },
@@ -397,30 +397,11 @@ local function debug()
         yes(stats.hidden), blocked and " (blocked: game stopped sending hits)" or ""))
 end
 
-mod = DUI:RegisterModule(NAME, {
-    plugin = NAME,
-    label = "Damage Numbers",
-    defaults = DEFAULTS,
-    OnEnable = function(self, db)
-        mod = self   -- can run inside RegisterModule, before the assignment below
-        db = type(db) == "table" and db or self.db
-        if type(db) == "table" then pcall(migrate, db) end
-        listen()
-    end,
-})
-
-me.On("SettingChanged", function(scope, path)
-    if scope == NAME or (scope == "general" and path == "sct.enabled") then listen() end
-end)
-me.On("TestModeChanged", syncTest)
-me.RegisterCommand("dmg", sampleBurst, "Shows sample damage numbers in the combat text.")
-me.RegisterCommand("dmgdebug", debug, "Says what the damage numbers plugin has seen this session.")
-
--- Options: a card on the Combat text page's Messages tab, the same rows as
--- Daylight UI's own messages (a switch with a stream menu and a color beside
--- it). Those controls come from Daylight UI's options widgets, which aren't
--- promised API; if they're missing, each message gets plain stream and color
--- rows instead.
+-- Options: the plugin's own page under Plugins in /dui. Each message row is
+-- like Daylight UI's own on Combat text > Messages (a switch with a stream
+-- menu and a color beside it). Those controls come from Daylight UI's options
+-- widgets, which aren't promised API; if they're missing, each message gets
+-- plain stream and color rows instead.
 
 local BESIDE_W, MENU_W = 190, 134
 
@@ -476,29 +457,58 @@ end
 
 local function combatTextOff() return not sctOn() end
 
-local items = {}
+local messages = {}
 local W = widgets()
 for _, id in ipairs(KIND_ORDER) do
     local k, base = KINDS[id], "kinds." .. id .. "."
-    items[#items + 1] = { type = "toggle", key = base .. "on", label = k.label, desc = k.desc,
-        default = DEFAULTS.kinds[id].on, disabled = combatTextOff, beside = W and besideFor(id) or nil }
+    messages[#messages + 1] = { type = "toggle", key = base .. "on", label = k.label, desc = k.desc,
+        disabled = combatTextOff, beside = W and besideFor(id) or nil }
     if not W then
         local function dim(getter) return not sctOn() or getter(base .. "on") == false end
         if not k.fixed then
-            items[#items + 1] = { type = "dropdown", key = base .. "stream", label = k.label .. ": stream",
-                values = STREAMS, order = STREAM_ORDER, default = DEFAULTS.kinds[id].stream, disabled = dim,
-                desc = "Which stream these go in." }
+            messages[#messages + 1] = { type = "dropdown", key = base .. "stream", label = k.label .. ": stream",
+                values = STREAMS, order = STREAM_ORDER, disabled = dim, desc = "Which stream these go in." }
         end
-        items[#items + 1] = { type = "color", key = base .. "color", label = k.label .. ": color",
-            default = DEFAULTS.kinds[id].color, disabled = dim, desc = "Their color." }
+        messages[#messages + 1] = { type = "color", key = base .. "color", label = k.label .. ": color",
+            disabled = dim, desc = "Their color." }
     end
 end
-items[#items + 1] = { type = "toggle", key = "soloOnly", label = "Only when solo", default = false, disabled = combatTextOff,
-    desc = "The game reports every hit your target takes, so in a group other players' hits show too. This hides your messages while you're grouped." }
-items[#items + 1] = { type = "toggle", key = "hideGame", label = "Hide the game's damage numbers", default = true, disabled = combatTextOff,
-    desc = "Turns off the numbers that pop off your target (yours and your pet's) once the stream has shown your first hit of the session. Turning this off puts back what you had." }
-items[#items + 1] = { type = "button", label = "Show sample numbers", func = sampleBurst,
-    desc = "Sends a few made-up hits through the streams. Same as /dui dmg." }
 
--- After Notices, the last card of the Messages tab, so it joins that tab.
-me.AddOptionsGroup("combattext", { label = "Damage you deal", wide = true, items = items }, "Notices")
+local OPTIONS = { pages = {
+    { id = "main", label = "Damage Numbers",
+      desc = "The damage you deal to your target, in Daylight UI's combat text streams.",
+      groups = {
+          { label = "Messages", wide = true, items = messages },
+          { label = "When they show", items = {
+              { type = "toggle", key = "soloOnly", label = "Only when solo", disabled = combatTextOff,
+                desc = "The game reports every hit your target takes, so in a group other players' hits show too. This hides your messages while you're grouped." },
+              { type = "toggle", key = "hideGame", label = "Hide the game's damage numbers", disabled = combatTextOff,
+                desc = "Turns off the numbers that pop off your target (yours and your pet's) once the stream has shown your first hit of the session. Turning this off puts back what you had." },
+              { type = "text", label = "Needs Daylight UI's combat text on (Combat text page). Number style, crit mark and school colors follow that page's settings." },
+          } },
+          { label = "Try it", items = {
+              { type = "button", label = "Show sample numbers", func = sampleBurst,
+                desc = "Sends a few made-up hits through the streams. Same as /dui dmg." },
+          } },
+      } },
+} }
+
+mod = DUI:RegisterModule(NAME, {
+    plugin = NAME,
+    label = "Damage Numbers",
+    defaults = DEFAULTS,
+    options = OPTIONS,
+    OnEnable = function(self, db)
+        mod = self   -- can run inside RegisterModule, before the assignment below
+        db = type(db) == "table" and db or self.db
+        if type(db) == "table" then pcall(migrate, db) end
+        listen()
+    end,
+})
+
+me.On("SettingChanged", function(scope, path)
+    if scope == NAME or (scope == "general" and path == "sct.enabled") then listen() end
+end)
+me.On("TestModeChanged", syncTest)
+me.RegisterCommand("dmg", sampleBurst, "Shows sample damage numbers in the combat text.")
+me.RegisterCommand("dmgdebug", debug, "Says what the damage numbers plugin has seen this session.")

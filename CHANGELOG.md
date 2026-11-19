@@ -1,6 +1,8 @@
 # Damage Numbers 1.5.0
 
 - Named "Damage Numbers (DaylightUI Plugin)", following Daylight UI's plugin naming.
+- Settings moved to their own page: `/dui` > Plugins > Damage Numbers. The plugin no longer adds a
+  card to Daylight UI's Combat text page. Your settings stay as they were.
 - New icon, on the Plugins page and in the AddOns list.
 - Chat lines are signed "Damage Numbers".
 

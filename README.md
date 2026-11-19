@@ -12,7 +12,7 @@ Install it next to Daylight UI and log in. That's it. `/dui dmg` shows a few sam
 
 ## Settings
 
-`/dui` > Combat text > Messages, in the **Damage you deal** card at the bottom:
+`/dui` > Plugins > **Damage Numbers**:
 
 | Message | What it is |
 |---|---|
@@ -21,7 +21,8 @@ Install it next to Daylight UI and log in. That's it. `/dui dmg` shows a few sam
 | Your crits in their own color | Crits take this color. Off: a crit keeps its hit's color. It always lands bigger. |
 | Your misses | Dodge, Parry, Miss, Resist, Absorb and the rest, as a word. |
 
-Each has a switch, a stream and a color, like Daylight UI's own messages. Below them:
+Each has a switch, a stream and a color, like Daylight UI's own messages on Combat text >
+Messages. Below them:
 
 - **Only when solo**: the game reports every hit your target takes, so in a group other players'
   hits show too. This hides your messages while you're grouped.
